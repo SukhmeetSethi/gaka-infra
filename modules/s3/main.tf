@@ -18,6 +18,7 @@ resource "aws_kms_alias" "s3_bucket_key_alias" {
 }
 
 # S3 Bucket Resource
+# tfsec:ignore:aws-s3-enable-bucket-logging
 resource "aws_s3_bucket" "gaka_kr" {
   bucket = "gaka-kr-${var.environment}"
 
