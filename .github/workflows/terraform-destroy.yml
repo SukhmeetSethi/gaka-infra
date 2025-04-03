@@ -1,0 +1,58 @@
+name: 'Terraform Destroy'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: 'Terraform Destroy'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+
+    - name: Terraform Init
+      id: init
+      run: terraform init
+
+    - name: Terraform Workspace
+      id: workspace
+      run: |
+        terraform workspace select ${{ github.event.inputs.environment }} || terraform workspace new ${{ github.event.inputs.environment }}
+        echo "workspace=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+
+    - name: Terraform Destroy
+      id: destroy
+      run: terraform destroy -auto-approve 
