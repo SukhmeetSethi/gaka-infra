@@ -1,3 +1,22 @@
+# KMS Key for S3 bucket encryption
+resource "aws_kms_key" "s3_bucket_key" {
+  description             = "KMS key for S3 bucket encryption"
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+
+  tags = {
+    Name        = "gaka-s3-kms-key-${var.environment}"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# KMS Key Alias
+resource "aws_kms_alias" "s3_bucket_key_alias" {
+  name          = "alias/gaka-s3-kms-key-${var.environment}"
+  target_key_id = aws_kms_key.s3_bucket_key.key_id
+}
+
 # S3 Bucket Resource
 resource "aws_s3_bucket" "gaka_kr" {
   bucket = "gaka-kr-${var.environment}"
@@ -17,13 +36,14 @@ resource "aws_s3_bucket_versioning" "gaka_kr_versioning" {
   }
 }
 
-# Enable server-side encryption
+# Enable server-side encryption with KMS
 resource "aws_s3_bucket_server_side_encryption_configuration" "gaka_kr_encryption" {
   bucket = aws_s3_bucket.gaka_kr.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      kms_master_key_id = aws_kms_key.s3_bucket_key.arn
+      sse_algorithm     = "aws:kms"
     }
   }
 }
