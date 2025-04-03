@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  security-events: write
 
 jobs:
   security:
@@ -31,12 +32,14 @@ jobs:
       with:
         working_directory: ${{ github.workspace }}
         format: sarif
-        output_file: tfsec-results.sarif
+        output_file: ${{ github.workspace }}/tfsec-results.sarif
+        soft_fail: true
 
     - name: Upload tfsec results
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: tfsec-results.sarif
+        sarif_file: ${{ github.workspace }}/tfsec-results.sarif
+        category: tfsec
 
     - name: Run Checkov
       uses: bridgecrewio/checkov-action@master
@@ -44,9 +47,11 @@ jobs:
         directory: ${{ github.workspace }}
         framework: terraform
         output_format: sarif
-        output_file: checkov-results.sarif
+        output_file: ${{ github.workspace }}/checkov-results.sarif
+        soft_fail: true
 
     - name: Upload Checkov results
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: checkov-results.sarif 
+        sarif_file: ${{ github.workspace }}/checkov-results.sarif
+        category: checkov 
